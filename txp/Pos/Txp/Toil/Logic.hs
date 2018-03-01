@@ -116,6 +116,7 @@ processTx
     => EpochIndex -> (TxId, TxAux) -> m TxUndo
 processTx curEpoch tx@(id, aux) = do
     whenM (hasTx id) $ throwError ToilKnown
+    either (throwError . ToilInconsistentTxAux . show) pure (runPVerify aux)
     whenM ((>= memPoolLimitTx) <$> poolSize) $
         throwError (ToilOverwhelmed memPoolLimitTx)
     undo <- verifyAndApplyTx curEpoch True tx
@@ -136,6 +137,7 @@ normalizeToil curEpoch txs = mapM_ normalize ordered
 -- Verify and Apply logic
 ----------------------------------------------------------------------------
 
+-- | Verifies and applies tx. TxAux is assumed to be purely verified.
 verifyAndApplyTx
     :: ( MonadUtxo m
        , MonadGState m
@@ -143,7 +145,6 @@ verifyAndApplyTx
        )
     => EpochIndex -> Bool -> (TxId, TxAux) -> m TxUndo
 verifyAndApplyTx curEpoch verifyVersions tx@(_, txAux) = do
-    either (throwError . ToilInconsistentTxAux . show) pure (runPVerify txAux)
     (txUndo, txFeeMB) <- Utxo.verifyTxUtxo ctx txAux
     verifyGState curEpoch txAux txFeeMB
     applyTxToUtxo' tx
