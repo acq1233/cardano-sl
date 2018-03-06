@@ -79,7 +79,7 @@ import qualified Network.Transport.Abstract as NT
 import           Node.Message.Class (Packing, Serializable (..), pack, unpack)
 import           Node.Message.Decoder (Decoder (..), DecoderStep (..), continueDecoding)
 import           System.Random (Random, StdGen, random)
-import           System.Wlog (WithLogger, logDebug, logError, logWarning)
+import           System.Wlog (WithLogger, logDebug, logError, logInfo, logWarning)
 
 -- | A 'NodeId' wraps a network-transport endpoint address
 newtype NodeId = NodeId NT.EndPointAddress
@@ -691,6 +691,7 @@ stopNode Node {..} = do
     -- will wait on all running handlers. Since the end point has been closed,
     -- no new handler threads will be created, so this will block indefinitely
     -- only if some handler is blocked indefinitely or looping.
+    logInfo "Waiting for nodeDispatcherThread"
     wait nodeDispatcherThread
 
 data ConnectionState peerData m =
