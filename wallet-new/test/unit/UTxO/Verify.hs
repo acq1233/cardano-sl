@@ -50,7 +50,7 @@ import           Serokell.Util.Verify
 --
 -- Unsafe constructor since the various fields must be in agreement with
 -- each other. See 'verifyEnv'.
-data VerifyEnv = UnsafeVerifyEnv {
+data VerifyEnv = UncheckedVerifyEnv {
       venvInitUtxo         :: Utxo
     , venvInitStakes       :: StakesMap
     , venvInitTotal        :: Coin
@@ -63,7 +63,7 @@ verifyEnv' :: HasGenesisData
            -> BlockVersionData
            -> LoggerName
            -> VerifyEnv
-verifyEnv' utxo bvd lname = UnsafeVerifyEnv {
+verifyEnv' utxo bvd lname = UncheckedVerifyEnv {
       venvInitUtxo         =                     utxo
     , venvInitStakes       = utxoToStakes        utxo
     , venvInitTotal        = getTotalCoinsInUtxo utxo

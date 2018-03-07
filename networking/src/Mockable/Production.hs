@@ -89,7 +89,7 @@ instance Mockable Async Production where
     liftMockable (WithAsync m k)        = Production $ Conc.withAsync (runProduction m) (runProduction . k)
     liftMockable (AsyncThreadId p)      = Production $ return (Conc.asyncThreadId p)
     liftMockable (Race a b)             = Production $ Conc.race (runProduction a) (runProduction b)
-    liftMockable (UnsafeUnmask act)     = Production $
+    liftMockable (UncheckedUnmask act)     = Production $
         GHC.unsafeUnmask (runProduction act)
 
 instance Mockable LowLevelAsync Production where

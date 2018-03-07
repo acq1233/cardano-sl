@@ -47,7 +47,7 @@ module Node.Internal (
 import           Control.Exception.Safe (Exception, MonadCatch, MonadMask, MonadThrow,
                                          SomeException, bracket, catch, finally, throwM)
 import           Control.Monad (forM, forM_, when)
-import qualified Control.Monad.Catch as UnsafeExc
+import qualified Control.Monad.Catch as UncheckedExc
 import           Control.Monad.Fix (MonadFix)
 import           Data.Binary
 import qualified Data.ByteString as BS
@@ -1787,14 +1787,14 @@ bracketWithException
     -> (r -> Maybe e -> m b)
     -> (r -> m c)
     -> m c
-bracketWithException before after thing = UnsafeExc.mask $ \restore -> do
+bracketWithException before after thing = UncheckedExc.mask $ \restore -> do
     x <- before
-    res1 <- UnsafeExc.try $ restore (thing x)
+    res1 <- UncheckedExc.try $ restore (thing x)
     case res1 of
         Left (e1 :: SomeException) -> do
             _ :: Either SomeException b <-
-                UnsafeExc.try $ UnsafeExc.uninterruptibleMask_ $ after x (UnsafeExc.fromException e1)
-            UnsafeExc.throwM e1
+                UncheckedExc.try $ UncheckedExc.uninterruptibleMask_ $ after x (UncheckedExc.fromException e1)
+            UncheckedExc.throwM e1
         Right y -> do
-            _ <- UnsafeExc.uninterruptibleMask_ $ after x Nothing
+            _ <- UncheckedExc.uninterruptibleMask_ $ after x Nothing
             return y

@@ -54,7 +54,7 @@ getDlgMempool
     :: (MonadIO m, MonadDBRead m, MonadDelegation ctx m, MonadMask m)
     => m DlgPayload
 getDlgMempool =
-    fmap (UnsafeDlgPayload . toList) $
+    fmap (UncheckedDlgPayload . toList) $
     runDelegationStateAction $ uses dwProxySKPool (S.fromList . HM.elems)
 
 -- | Clears delegation mempool.

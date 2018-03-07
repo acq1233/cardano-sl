@@ -162,7 +162,7 @@ data Async m t where
     Race :: m t -> m r -> Async m (Either t r)
     -- | This is needed to implement 'withAsyncWithUnmask'. Note that
     -- 'unsafeUnmask' function is not exported.
-    UnsafeUnmask :: m a -> Async m a
+    UncheckedUnmask :: m a -> Async m a
 
 {-# INLINE withAsync #-}
 withAsync :: ( Mockable Async m ) => m t -> (Promise m t -> m r) -> m r
@@ -184,13 +184,13 @@ race a b = liftMockable $ Race a b
 
 {-# INLINE unsafeUnmask #-}
 unsafeUnmask :: Mockable Async m => m a -> m a
-unsafeUnmask act = liftMockable $ UnsafeUnmask act
+unsafeUnmask act = liftMockable $ UncheckedUnmask act
 
 instance (Promise n ~ Promise m, ThreadId n ~ ThreadId m) => MFunctor' Async m n where
     hoist' nat (WithAsync m k)  = WithAsync (nat m) (nat . k)
     hoist' _ (AsyncThreadId p)  = AsyncThreadId p
     hoist' nat (Race p e)       = Race (nat p) (nat e)
-    hoist' nat (UnsafeUnmask m) = UnsafeUnmask (nat m)
+    hoist' nat (UncheckedUnmask m) = UncheckedUnmask (nat m)
 
 data Concurrently m t where
     Concurrently :: m a -> m b -> Concurrently m (a, b)
