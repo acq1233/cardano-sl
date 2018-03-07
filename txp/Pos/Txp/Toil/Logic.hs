@@ -43,7 +43,7 @@ import           Pos.Txp.Toil.Stakes (applyTxsToStakes, rollbackTxsStakes)
 import           Pos.Txp.Toil.Types (TxFee (..))
 import qualified Pos.Txp.Toil.Utxo as Utxo
 import           Pos.Txp.Topsort (topsortTxs)
-import           Pos.Util.Verification (runPVerify)
+import           Pos.Util.Verification (runPVerifyText)
 
 ----------------------------------------------------------------------------
 -- Global
@@ -116,7 +116,7 @@ processTx
     => EpochIndex -> (TxId, TxAux) -> m TxUndo
 processTx curEpoch tx@(id, aux) = do
     whenM (hasTx id) $ throwError ToilKnown
-    either (throwError . ToilInconsistentTxAux . show) pure (runPVerify aux)
+    whenJust (runPVerifyText aux) $ throwError . ToilInconsistentTxAux
     whenM ((>= memPoolLimitTx) <$> poolSize) $
         throwError (ToilOverwhelmed memPoolLimitTx)
     undo <- verifyAndApplyTx curEpoch True tx

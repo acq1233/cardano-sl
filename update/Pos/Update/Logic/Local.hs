@@ -54,7 +54,7 @@ import           Pos.Update.Poll (MonadPoll (deactivateProposal), MonadPollRead 
                                   runPollT, verifyAndApplyUSPayload)
 import           Pos.Update.Poll.Types (canCombineVotes, psVotes)
 import           Pos.Util.Util (HasLens (..), HasLens')
-import           Pos.Util.Verification (runPVerify)
+import           Pos.Util.Verification (runPVerifyText)
 
 type USLocalLogicMode ctx m =
     ( MonadIO m
@@ -152,7 +152,7 @@ processSkeleton payload =
         modifierOrFailure <-
             lift . runDBPoll . runExceptT . evalPollT msModifier . execPollT def $ do
                 lastAdopted <- getAdoptedBV
-                either (throwError . PollInvalidUpdatePayload . show) pure $ runPVerify payload
+                whenJust (runPVerifyText payload) $ throwError . PollInvalidUpdatePayload
                 verifyAndApplyUSPayload lastAdopted True (Left msSlot) payload
         case modifierOrFailure of
             Left failure -> throwError failure

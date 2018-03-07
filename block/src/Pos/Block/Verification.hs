@@ -38,7 +38,7 @@ import           Pos.Util.Verification (PVer, PVerifiable (..), pverFail, pverFi
 ----------------------------------------------------------------------------
 
 instance PVerifiable BlockSignature where
-    pverifyOne sig =
+    pverifySelf sig =
         when (selfSignedProxy sig) $
            pverFail "BlockSignature: can't use self-signed proxy psk to issue the block"
       where
@@ -65,7 +65,7 @@ instance HasCryptoConfiguration => PVerifiable (Body MainBlockchain) where
 
 -- I think only HasCryptoConfiguration is needed here @volhovm
 instance HasConfiguration => PVerifiable (GenericBlockHeader MainBlockchain) where
-    pverifyOne UnsafeGenericBlockHeader{..} =
+    pverifySelf UnsafeGenericBlockHeader{..} =
         -- Internal consistency: is the signature in the consensus data really for
         -- this block?
         unless (verifyBlockSignature _mcdSignature) $
@@ -97,12 +97,12 @@ instance HasConfiguration => PVerifiable (GenericBlockHeader MainBlockchain) whe
         -- Consensus data and extra header data require validation.
         pverify (_gbhConsensus it)
         pverify (_gbhExtra it)
-        pverifyOne it
+        pverifySelf it
 
 -- Genesis headers are not verifiable.
 instance HasConfiguration => PVerifiable BlockHeader where
-    pverifyOne (BlockHeaderGenesis _) = pass
-    pverifyOne (BlockHeaderMain x)    = pverifyOne x
+    pverifySelf (BlockHeaderGenesis _) = pass
+    pverifySelf (BlockHeaderMain x)    = pverifySelf x
     pverify (BlockHeaderGenesis _) = pass
     pverify (BlockHeaderMain x)    = pverify x
 
@@ -129,10 +129,10 @@ checkBodyProof body proof = do
     unless (calculatedProof == proof) $ pverFail errMsg
 
 instance PVerifiable (GenericBlock GenesisBlockchain) where
-    pverifyOne UnsafeGenericBlock{..} = checkBodyProof _gbBody (_gbhBodyProof _gbHeader)
+    pverifySelf UnsafeGenericBlock{..} = checkBodyProof _gbBody (_gbhBodyProof _gbHeader)
 
 instance HasConfiguration => PVerifiable (GenericBlock MainBlockchain) where
-    pverifyOne block@UnsafeGenericBlock{..} = do
+    pverifySelf block@UnsafeGenericBlock{..} = do
         -- No need to verify the main extra body data. It's an 'Attributes ()'
         -- which is valid whenever it's well-formed.
         --
@@ -151,8 +151,8 @@ instance HasConfiguration => PVerifiable (GenericBlock MainBlockchain) where
     pverify b = do
         pverField "gbHeader" $ pverify (_gbHeader b)
         pverField "gbBody" $ pverify (_gbBody b)
-        pverifyOne b
+        pverifySelf b
 
 instance HasConfiguration => PVerifiable Block where
-    pverifyOne = either pverifyOne pverifyOne
+    pverifySelf = either pverifySelf pverifySelf
     pverify = either pverify pverify

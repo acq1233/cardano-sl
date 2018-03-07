@@ -63,7 +63,7 @@ checkCertSign UnsafeVssCertificate {..} =
     checkSig SignVssCert vcSigningKey (vcVssKey, vcExpiryEpoch) vcSignature
 
 instance (HasCryptoConfiguration, Bi EpochIndex) => PVerifiable VssCertificate where
-    pverifyOne vssCert =
+    pverifySelf vssCert =
         unless (checkCertSign vssCert) $
         pverFail "VssCertificate: invalid sign"
 
@@ -81,7 +81,7 @@ toCertPair vc = (getCertId vc, vc)
 -- | Guard against certificates with duplicate signing keys or with
 -- duplicate 'vcVssKey's.
 instance (HasCryptoConfiguration, Bi EpochIndex) => PVerifiable VssCertificatesMap where
-    pverifyOne (UnsafeVssCertificatesMap vm) = do
+    pverifySelf (UnsafeVssCertificatesMap vm) = do
         let certs = HM.elems vm
         unless (allDistinct (map vcSigningKey certs)) $
             pverFail "VssCertificatesMap: two certs have the same signing key"
@@ -95,7 +95,7 @@ instance (HasCryptoConfiguration, Bi EpochIndex) => PVerifiable VssCertificatesM
                     k (getCertId v)
     pverify vcm@(UnsafeVssCertificatesMap vm) = do
         forM_ (HM.elems vm) $ pverField "VssCertificatesMap.elem" . pverify
-        pverifyOne vcm
+        pverifySelf vcm
 
 -- | Construct a 'VssCertificatesMap' from a list of certs by making a
 -- hashmap on certificate identifiers.

@@ -94,7 +94,7 @@ newtype ApplicationName = UnsafeApplicationName
     } deriving (Eq, Ord, Show, Generic, Typeable, ToString, Hashable, Buildable, NFData)
 
 instance PVerifiable ApplicationName where
-    pverifyOne (UnsafeApplicationName appName) = do
+    pverifySelf (UnsafeApplicationName appName) = do
         when (length appName > applicationNameMaxLength)
              (pverFail "ApplicationName: too long string passed")
         when (T.any (not . isAscii) appName)
@@ -294,7 +294,7 @@ systemTagMaxLength :: Integral i => i
 systemTagMaxLength = 10
 
 instance PVerifiable SystemTag where
-    pverifyOne (UnsafeSystemTag tag) = do
+    pverifySelf (UnsafeSystemTag tag) = do
         when (T.length tag > systemTagMaxLength) $
             pverFail "SystemTag: too long string passed"
         when (T.any (not . isAscii) tag) $

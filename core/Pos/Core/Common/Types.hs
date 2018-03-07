@@ -75,7 +75,7 @@ import           Pos.Crypto.Hashing (AbstractHash, Hash)
 import           Pos.Crypto.HD (HDAddressPayload)
 import           Pos.Crypto.Signing (PublicKey, RedeemPublicKey)
 import           Pos.Data.Attributes (Attributes)
-import           Pos.Util.Verification (PVerifiable (..), pverFail, runPVerify)
+import           Pos.Util.Verification (PVerifiable (..), pverFail, runPVerifyPanic)
 
 ----------------------------------------------------------------------------
 -- Address, StakeholderId
@@ -301,15 +301,11 @@ maxCoinVal = 45000000000000000
 -- | Makes a 'Coin' but is _|_ if that coin exceeds 'maxCoinVal'.
 -- You can also use 'checkCoin' to do that check.
 mkCoin :: Word64 -> Coin
-mkCoin x =
-    let c = UnsafeCoin x
-    in case runPVerify c of
-          Left e   -> error $ "mkCoin: " <> show e
-          Right () -> c
+mkCoin x = runPVerifyPanic "mkCoin" $ UnsafeCoin x
 {-# INLINE mkCoin #-}
 
 instance PVerifiable Coin where
-    pverifyOne (UnsafeCoin c)
+    pverifySelf (UnsafeCoin c)
         | c <= maxCoinVal = pass
         | otherwise       = pverFail $ "Coin: " <> show c <> " is too large"
 
@@ -346,7 +342,7 @@ instance Bounded CoinPortion where
     maxBound = UnsafeCoinPortion coinPortionDenominator
 
 instance PVerifiable CoinPortion where
-    pverifyOne (UnsafeCoinPortion x) =
+    pverifySelf (UnsafeCoinPortion x) =
         when (x > coinPortionDenominator) $ pverFail $
             sformat
             ("CoinPortion: value is greater than coinPortionDenominator: "

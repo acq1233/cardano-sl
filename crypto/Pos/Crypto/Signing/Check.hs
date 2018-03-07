@@ -61,11 +61,11 @@ verifyProxyCert issuerPk (PublicKey delegatePk) o (ProxyCert sig) =
         (Signature sig)
 
 instance (HasCryptoConfiguration, Bi w) => PVerifiable (ProxySecretKey w) where
-    pverifyOne psk = do
+    pverifySelf psk = do
        let valid = verifyProxyCert (pskIssuerPk psk) (pskDelegatePk psk)
                                    (pskOmega psk) (pskCert psk)
        unless valid $ pverFail "ProxySecretKey signature/cert is broken"
-    pverify = pverifyOne
+    pverify = pverifySelf
 
 instance (HasCryptoConfiguration, Bi w) => PVerifiable (ProxySignature w a) where
     pverify psig = pverField "psigPsk" $ pverify (psigPsk psig)

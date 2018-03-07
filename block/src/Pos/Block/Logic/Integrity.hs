@@ -36,7 +36,7 @@ import           Pos.Core.Block (Block, BlockHeader (..), gebAttributes, gehAttr
                                  mebAttributes, mehAttributes)
 import           Pos.Data.Attributes (areAttributesKnown)
 import           Pos.Util.Chrono (NewestFirst (..), OldestFirst)
-import           Pos.Util.Verification (runPVerify)
+import           Pos.Util.Verification (runPVerifyText)
 
 ----------------------------------------------------------------------------
 -- Header
@@ -61,9 +61,9 @@ data VerifyHeaderParams = VerifyHeaderParams
       -- ^ Check that header has no unknown attributes.
     } deriving (Eq, Show)
 
-verifyFromEither :: Text -> Either Text () -> VerificationRes
-verifyFromEither txt (Left e) = VerFailure $ one $ txt <> ": " <> e
-verifyFromEither _ (Right _)  = VerSuccess
+verifyFromMaybe :: Text -> Maybe Text -> VerificationRes
+verifyFromMaybe txt (Just e) = VerFailure $ one $ txt <> ": " <> e
+verifyFromMaybe _ Nothing    = VerSuccess
 
 -- CHECK: @verifyHeader
 -- | Check some predicates (determined by 'VerifyHeaderParams') about
@@ -87,7 +87,7 @@ verifyHeader
     :: HasConfiguration
     => VerifyHeaderParams -> BlockHeader -> VerificationRes
 verifyHeader VerifyHeaderParams {..} h =
-       verifyFromEither "internal header consistency" (first show $ runPVerify h)
+       verifyFromMaybe "internal header consistency" (runPVerifyText h)
     <> verifyGeneric checks
   where
     checks =
@@ -244,7 +244,7 @@ verifyBlock
     :: HasConfiguration
     => VerifyBlockParams -> Block -> VerificationRes
 verifyBlock VerifyBlockParams {..} blk = mconcat
-    [ verifyFromEither "internal block consistency" (first show $ runPVerify blk)
+    [ verifyFromMaybe "internal block consistency" (runPVerifyText blk)
     , verifyHeader vbpVerifyHeader (getBlockHeader blk)
     , checkSize vbpMaxSize
     , bool mempty (verifyNoUnknown blk) vbpVerifyNoUnknown

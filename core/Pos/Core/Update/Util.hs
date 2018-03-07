@@ -54,7 +54,7 @@ instance PVerifiable BlockVersionModifier where
         whenJust bvmSoftforkRule $ pverField "softforkRule" . pverify
 
 instance HasCryptoConfiguration => PVerifiable UpdateVote where
-    pverifyOne it = do
+    pverifySelf it = do
         let sigValid = checkSig SignUSVote
                                 (uvKey it)
                                 (uvProposalId it, uvDecision it)
@@ -62,7 +62,7 @@ instance HasCryptoConfiguration => PVerifiable UpdateVote where
         unless sigValid $ pverFail "UpdateVote: invalid signature"
 
 instance (HasCryptoConfiguration, Bi UpdateProposalToSign) => PVerifiable UpdateProposal where
-    pverifyOne UnsafeUpdateProposal{..} = do
+    pverifySelf UnsafeUpdateProposal{..} = do
         let toSign = UpdateProposalToSign
                          upBlockVersion
                          upBlockVersionMod

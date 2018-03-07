@@ -218,7 +218,7 @@ instance Bi Tx => Buildable TxAux where
     build = bprint txaF
 
 instance PVerifiable Tx where
-    pverifyOne tx = do
+    pverifySelf tx = do
         forM_ ([0..] `zip` toList (_txOutputs tx)) $ \((i :: Word), TxOut{..}) ->
             when (txOutValue == minBound) $
                 pverFail $
@@ -228,7 +228,7 @@ instance PVerifiable Tx where
     pverify tx = do
         forM_ ([0..] `zip` toList (_txOutputs tx)) $ \((i :: Word), to) ->
             pverField (sformat ("output %"%int) i) $ pverify (txOutValue to)
-        pverifyOne tx
+        pverifySelf tx
 
 instance PVerifiable TxAux where
     pverify TxAux{..} = pverify taTx
@@ -280,7 +280,7 @@ instance NFData TxPayload
 makeLenses ''TxPayload
 
 instance PVerifiable TxPayload where
-    pverifyOne UnsafeTxPayload{..} =
+    pverifySelf UnsafeTxPayload{..} =
         unless (length _txpTxs == length _txpWitnesses) $
             pverFail "txs length isn't equal to txWitnesses length"
     pverify txPayload =

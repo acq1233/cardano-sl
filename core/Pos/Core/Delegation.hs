@@ -96,12 +96,12 @@ instance Buildable DlgPayload where
             (length psks) psks
 
 instance (HasCryptoConfiguration, Bi HeavyDlgIndex) => PVerifiable DlgPayload where
-    pverifyOne (UnsafeDlgPayload proxySKs) = do
+    pverifySelf (UnsafeDlgPayload proxySKs) = do
         unless (allDistinct $ map pskIssuerPk proxySKs) $
             pverFail "Some of block's PSKs have the same issuer, which is prohibited"
     pverify dp@(UnsafeDlgPayload x) = do
         pverField "dlgPayload" $ forM_ x pverify
-        pverifyOne dp
+        pverifySelf dp
 
 -- | Proof of delegation payload.
 type DlgProof = Hash DlgPayload
