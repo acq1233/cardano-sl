@@ -65,10 +65,9 @@ retrievalWorkerImpl
     :: forall ctx m.
        (BlockWorkMode ctx m)
     => Diffusion m -> m ()
-retrievalWorkerImpl diffusion =
-    handleAny mainLoopE $ do
-        logInfo "Starting retrievalWorker loop"
-        mainLoop
+retrievalWorkerImpl diffusion = do
+    logInfo "Starting retrievalWorker loop"
+    mainLoop
   where
     mainLoop = do
         queue        <- view (lensOf @BlockRetrievalQueueTag)
@@ -92,25 +91,21 @@ retrievalWorkerImpl diffusion =
                     pure (handleRecoveryWithHandler nodeId rHeader)
         () <- thingToDoNext
         mainLoop
-    mainLoopE e = do
-        -- REPORT:ERROR 'reportOrLogE' in block retrieval worker.
-        reportOrLogE "retrievalWorker mainLoopE: error caught " e
-        delay (sec 1)
-        mainLoop
 
     -----------------
 
     -- That's the first queue branch (task dispatching).
-    handleBlockRetrieval nodeId BlockRetrievalTask{..} = do
-        logDebug $ sformat
-            ("Block retrieval queue task received, nodeId="%build%
-             ", header="%build%", continues="%build)
-            nodeId
-            (headerHash brtHeader)
-            brtContinues
-        (if brtContinues then handleContinues else handleAlternative)
-            nodeId
-            brtHeader
+    handleBlockRetrieval nodeId BlockRetrievalTask{..} =
+        handleAny (handleRetrievalE nodeId brtHeader) $ do
+            logDebug $ sformat
+                ("Block retrieval queue task received, nodeId="%build%
+                 ", header="%build%", continues="%build)
+                nodeId
+                (headerHash brtHeader)
+                brtContinues
+            (if brtContinues then handleContinues else handleAlternative)
+                nodeId
+                brtHeader
 
     -- When we have a continuation of the chain, just try to get and apply it.
     handleContinues nodeId header = do
@@ -139,6 +134,13 @@ retrievalWorkerImpl diffusion =
                 logDebug "handleAlternative: considering header for recovery mode"
                 -- CSL-1514
                 updateRecoveryHeader nodeId header
+
+    -- Squelch the exception and continue. Used with 'handleAny' from
+    -- safe-exceptions so it will let async exceptions pass.
+    handleRetrievalE nodeId cHeader e = do
+        reportOrLogW (sformat
+            ("handleRetrievalE: error handling nodeId="%build%", header="%build%": ")
+            nodeId (headerHash cHeader)) e
 
     -----------------
 
